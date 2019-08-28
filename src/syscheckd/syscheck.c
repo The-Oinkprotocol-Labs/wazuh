@@ -225,7 +225,7 @@ int Start_win32_Syscheck()
     }
 
     /* Some sync time */
-    sleep(syscheck.tsleep * 5);
+    // sleep(syscheck.tsleep * 5);
     fim_initialize();
 
     /* Wait if agent started properly */
@@ -390,17 +390,17 @@ int main(int argc, char **argv)
     }
 
     /* Initial time to settle */
-    sleep(syscheck.tsleep + 2);
+    // sleep(syscheck.tsleep + 2);
 
     /* Connect to the queue */
     if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
         minfo(FIM_WAITING_QUEUE, DEFAULTQPATH, errno, strerror(errno), 5);
 
-        sleep(5);
+        // sleep(5);
         if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
             /* more 10 seconds of wait */
             minfo(FIM_WAITING_QUEUE, DEFAULTQPATH, errno, strerror(errno), 10);
-            sleep(10);
+            // sleep(10);
             if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
                 merror_exit(QUEUE_FATAL, DEFAULTQPATH);
             }
@@ -468,7 +468,7 @@ int main(int argc, char **argv)
     }
 
     /* Some sync time */
-    sleep(syscheck.tsleep * 5);
+    // sleep(syscheck.tsleep * 5);
     fim_initialize();
 
     // Audit events thread

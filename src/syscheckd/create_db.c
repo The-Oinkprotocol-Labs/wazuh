@@ -622,7 +622,7 @@ static int read_file(const char *file_name, const char *linked_file, int dir_pos
 
         /* Sleep here too */
         if (__counter >= (syscheck.sleep_after)) {
-            sleep(syscheck.tsleep);
+            // sleep(syscheck.tsleep);
             __counter = 0;
         }
         __counter++;

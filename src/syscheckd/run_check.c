@@ -82,21 +82,21 @@ static void send_sk_db(int first_start)
     /* Send first start scan control message */
     if(first_start) {
         send_syscheck_msg(HC_FIM_DB_SFS);
-        sleep(syscheck.tsleep * 5);
+        // sleep(syscheck.tsleep * 5);
         create_db();
         minfo(FIM_FREQUENCY_ENDED);
     } else {
         send_syscheck_msg(HC_FIM_DB_SS);
-        sleep(syscheck.tsleep * 5);
+        // sleep(syscheck.tsleep * 5);
         run_dbcheck();
         minfo(FIM_FREQUENCY_ENDED);
     }
-    sleep(syscheck.tsleep * 5);
+    // sleep(syscheck.tsleep * 5);
 #ifdef WIN32
     /* Check for registry changes on Windows */
     minfo(FIM_WINREGISTRY_START);
     os_winreg_check();
-    sleep(syscheck.tsleep * 5);
+    // sleep(syscheck.tsleep * 5);
     minfo(FIM_WINREGISTRY_ENDED);
 #endif
 
@@ -172,7 +172,7 @@ void start_daemon()
 
     /* Some time to settle */
     memset(curr_hour, '\0', 12);
-    sleep(syscheck.tsleep * 10);
+    // sleep(syscheck.tsleep * 10);
 
     /* If the scan time/day is set, reset the
      * syscheck.time/rootcheck.time
@@ -194,7 +194,7 @@ void start_daemon()
 
     /* Before entering in daemon mode itself */
     prev_time_sk = time(0);
-    sleep(syscheck.tsleep * 10);
+    // sleep(syscheck.tsleep * 10);
 
     /* If the scan_time or scan_day is set, we need to handle the
      * current day/time on the loop.
@@ -301,29 +301,29 @@ void start_daemon()
                              NULL, NULL, &selecttime);
             if (run_now < 0) {
                 merror(FIM_ERROR_SELECT);
-                sleep(SYSCHECK_WAIT);
+                // sleep(SYSCHECK_WAIT);
             } else if (run_now == 0) {
                 /* Timeout */
             } else if (FD_ISSET (syscheck.realtime->fd, &rfds)) {
                 realtime_process();
             }
         } else {
-            sleep(SYSCHECK_WAIT);
+            // sleep(SYSCHECK_WAIT);
         }
 #elif defined(WIN32)
         if (syscheck.realtime && (syscheck.realtime->fd >= 0)) {
             log_realtime_status(1);
             if (WaitForSingleObjectEx(syscheck.realtime->evt, SYSCHECK_WAIT * 1000, TRUE) == WAIT_FAILED) {
                 merror(FIM_ERROR_REALTIME_WAITSINGLE_OBJECT);
-                sleep(SYSCHECK_WAIT);
+                // sleep(SYSCHECK_WAIT);
             } else {
-                sleep(syscheck.tsleep);
+                // sleep(syscheck.tsleep);
             }
         } else {
-            sleep(SYSCHECK_WAIT);
+            // sleep(SYSCHECK_WAIT);
         }
 #else
-        sleep(SYSCHECK_WAIT);
+        // sleep(SYSCHECK_WAIT);
 #endif
     }
 }
@@ -651,7 +651,7 @@ static void *symlink_checker_thread(__attribute__((unused)) void * data) {
     mdebug1(FIM_LINKCHECK_START, checker_sleep);
 
     while (1) {
-        sleep(checker_sleep);
+        // sleep(checker_sleep);
         mdebug1(FIM_LINKCHECK_START, checker_sleep);
 
         for (i = 0; syscheck.dir[i]; i++) {

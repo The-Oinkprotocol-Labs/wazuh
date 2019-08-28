@@ -979,7 +979,7 @@ long unsigned int WINAPI state_checker(__attribute__((unused)) void *_void) {
             // Set the timestamp
             GetSystemTime(&d_status->last_check);
         }
-        sleep(interval);
+        // sleep(interval);
     }
 
     return 0;
