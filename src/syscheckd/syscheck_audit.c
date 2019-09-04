@@ -917,11 +917,11 @@ void audit_reload_rules(void) {
 
 void *audit_reload_thread() {
 
-    sleep(RELOAD_RULES_INTERVAL);
+    //sleep(RELOAD_RULES_INTERVAL);
     while (audit_thread_active) {
         // Reload rules
         audit_reload_rules();
-        sleep(RELOAD_RULES_INTERVAL);
+       //sleep(RELOAD_RULES_INTERVAL);
     }
 
     return NULL;
@@ -1032,7 +1032,7 @@ void audit_read_events(int *audit_sock, int mode) {
         switch (select(*audit_sock + 1, &fdset, NULL, NULL, &timeout)) {
         case -1:
             merror(SELECT_ERROR, errno, strerror(errno));
-            sleep(1);
+            //sleep(1);
             continue;
 
         case 0:
@@ -1058,12 +1058,12 @@ void audit_read_events(int *audit_sock, int mode) {
             mwarn(FIM_WARN_AUDIT_CONNECTION_CLOSED);
             // Reconnect
             conn_retries = 0;
-            sleep(1);
+            //sleep(1);
             minfo(FIM_AUDIT_RECONNECT, ++conn_retries);
             *audit_sock = init_auditd_socket();
             while (conn_retries < MAX_CONN_RETRIES && *audit_sock < 0) {
                 minfo(FIM_AUDIT_RECONNECT, ++conn_retries);
-                sleep(1);
+                //sleep(1);
                 *audit_sock = init_auditd_socket();
             }
             if (*audit_sock >= 0) {
@@ -1225,7 +1225,7 @@ int audit_health_check(int audit_socket) {
     mdebug2(FIM_HEALTHCHECK_WAIT_CREATE);
 
     while (!audit_health_check_creation && timer > 0) {
-        sleep(1);
+        //sleep(1);
         timer--;
     }
     if (!audit_health_check_creation) {
@@ -1240,7 +1240,7 @@ int audit_health_check(int audit_socket) {
 
     timer = 10;
     while (!audit_health_check_deletion && timer > 0) {
-        sleep(1);
+        //sleep(1);
         timer--;
     }
     if (!audit_health_check_deletion) {

@@ -572,7 +572,13 @@ void *wm_osquery_monitor_main(wm_osquery_monitor_t *osquery)
     pthread_t treader = 0;
 
     if (osquery->disable) {
-        minfo("Module disabled. Exiting...");
+
+        minfo("Module disabled. Exiting...~~~~~~");
+while(1) {
+            sleep(500);
+
+        }
+
         return NULL;
     }
 

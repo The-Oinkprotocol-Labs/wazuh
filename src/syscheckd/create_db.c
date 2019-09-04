@@ -622,7 +622,7 @@ static int read_file(const char *file_name, const char *linked_file, int dir_pos
 
         /* Sleep here too */
         if (__counter >= (syscheck.sleep_after)) {
-            sleep(syscheck.tsleep);
+            //sleep(syscheck.tsleep);
             __counter = 0;
         }
         __counter++;
@@ -827,6 +827,8 @@ int run_dbcheck()
     OSHash *last_backup;
     int pos;
 
+    minfo("~~~~~~~~~~ Files before scanning: [%d]", syscheck.fp->elements);
+
     os_calloc(OS_SIZE_6144, sizeof(char), alert_msg);
 
     __counter = 0;
@@ -898,6 +900,8 @@ int run_dbcheck()
     }
 
     free(alert_msg);
+
+    minfo("~~~~~~~~~~ Files after scanning: [%d]", syscheck.fp->elements);
 
     return (0);
 }

@@ -28,6 +28,7 @@ typedef struct _OSHash {
     unsigned int initial_seed;
     unsigned int constant;
     pthread_rwlock_t mutex;
+    unsigned int elements;
 
     void (*free_data_function)(void *data);
     OSHashNode **table;

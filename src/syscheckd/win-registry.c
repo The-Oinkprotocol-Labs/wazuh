@@ -321,7 +321,7 @@ void os_winreg_open_key(char *subkey, char *fullkey_name, int arch, const char *
 
     /* Sleep X every Y files */
     if (ig_count >= syscheck.sleep_after) {
-        sleep(syscheck.tsleep);
+        //sleep(syscheck.tsleep);
         ig_count = 1;
     }
     ig_count++;
@@ -407,7 +407,7 @@ void os_winreg_check()
 
     /* Notify of db completed */
     if (run_count > 1) {
-        sleep(syscheck.tsleep * 5);
+        //sleep(syscheck.tsleep * 5);
     }
 
     run_count++;

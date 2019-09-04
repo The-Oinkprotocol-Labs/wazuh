@@ -504,7 +504,7 @@ int realtime_win32read(win32rtfim *rtlocald)
                                RTCallBack);
     if (rc == 0) {
         merror(FIM_ERROR_REALTIME_DIRECTORYCHANGES, rtlocald->dir);
-        sleep(2);
+        //sleep(2);
     }
 
     return (0);

@@ -344,6 +344,10 @@ int local_start()
     /* Send agent information message */
     send_win32_info(time(0));
 
+    while (1) {
+        sleep(500);
+    }
+
     /* Start logcollector -- main process here */
     LogCollectorStart();
 

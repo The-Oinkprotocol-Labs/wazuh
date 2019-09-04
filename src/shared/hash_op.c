@@ -294,6 +294,8 @@ int _OSHash_Add(OSHash *self, const char *key, void *data, int update)
         self->table[index] = new_node;
     }
 
+    self->elements = self->elements + 1;
+
     return (2);
 }
 
@@ -472,6 +474,8 @@ void *OSHash_Delete(OSHash *self, const char *key)
             free(curr_node->key);
             data = curr_node->data;
             free(curr_node);
+            self->elements = self->elements - 1;
+
             return data;
         }
         prev_node = curr_node;
