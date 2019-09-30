@@ -248,10 +248,10 @@ void test_file(const char *filetype, const char *filepath, char **output) {
     if (wm_exec(cmd, &output_msg, &result_code, timeout, NULL) < 0) {
         if (result_code == EXECVE_ERROR) {
             // mwarn("Path is invalid or file has insufficient permissions. %s", cmd);
-            wm_strcat(output, "Path is invalid or file has insufficient permissions:", ' ');
+            wm_strcat(output, "Path is invalid or file has insufficient permissions:", '\n');
         } else {
             // mwarn("Error executing [%s]", cmd);
-            wm_strcat(output, "Error executing: ", ' ');
+            wm_strcat(output, "Error executing: ", '\n');
         }
         wm_strcat(output, cmd, ' ');
         os_free(output_msg);

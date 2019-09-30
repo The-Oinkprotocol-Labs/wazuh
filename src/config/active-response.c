@@ -24,7 +24,7 @@ int ar_flag = 0;
 
 
 /* Generate a list with all active responses */
-int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
+int ReadActiveResponses(XML_NODE node, void *d1, void *d2, char **output)
 {
     OSList *l1 = (OSList *) d1;
     OSList *l2 = (OSList *) d2;
@@ -168,7 +168,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
         /* reset ar_flag, the next ar command may not be disabled */
         ar_flag = 0;
         if (tmp_ar->command) {
-            mdebug1("active response command '%s' is disabled", tmp_ar->command);
+            if (output == NULL){
+                mdebug1("active response command '%s' is disabled", tmp_ar->command);
+            }
             free(tmp_ar->command);
         }
         fclose(fp);
@@ -179,7 +181,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
 
     /* Command and location must be there */
     if (!tmp_ar->command || !tmp_location) {
-        mdebug1("Command or location missing");
+        if (output == NULL){
+            mdebug1("Command or location missing");
+        }
         fclose(fp);
         free(tmp_ar);
         free(tmp_location);
@@ -202,7 +206,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
 
     if (OS_Regex("defined-agent", tmp_location)) {
         if (!tmp_ar->agent_id) {
-            mdebug1("'defined-agent' agent_id not defined");
+            if (output == NULL) {
+                mdebug1("'defined-agent' agent_id not defined");
+            }
             merror(AR_DEF_AGENT);
             fclose(fp);
             free(tmp_ar);
@@ -219,7 +225,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
 
     /* If we didn't set any value for the location */
     if (tmp_ar->location == 0) {
-        mdebug1("No location defined");
+        if (output == NULL) {
+            mdebug1("No location defined");
+        }
         merror(AR_INV_LOC, tmp_location);
         fclose(fp);
         free(tmp_ar);
@@ -250,7 +258,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
 
         /* Didn't find a valid command */
         if (tmp_ar->ar_cmd == NULL) {
-            mdebug1("Invalid command");
+            if (output == NULL) {
+                mdebug1("Invalid command");
+            }
             merror(AR_INV_CMD, tmp_ar->command);
             fclose(fp);
             free(tmp_ar);
@@ -260,7 +270,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
 
     /* Check if timeout is allowed */
     if (tmp_ar->timeout && !tmp_ar->ar_cmd->timeout_allowed) {
-        mdebug1("Timeout is not allowed");
+        if (output == NULL) {
+            mdebug1("Timeout is not allowed");
+        }
         minfo(AR_NO_TIMEOUT, tmp_ar->ar_cmd->name);
         tmp_ar->timeout = 0;
     }
@@ -283,7 +295,9 @@ int ReadActiveResponses(XML_NODE node, void *d1, void *d2)
              tmp_ar->timeout);
 
     /* Add to shared file */
-    mdebug1("Writing command '%s' to '%s'", tmp_ar->command, DEFAULTARPATH);
+    if (output == NULL){
+        mdebug1("Writing command '%s' to '%s'", tmp_ar->command, DEFAULTARPATH)
+    }
     fprintf(fp, "%s - %s - %d\n",
             tmp_ar->name,
             tmp_ar->ar_cmd->executable,
@@ -327,7 +341,7 @@ error_invalid:
     return (OS_INVALID);
 }
 
-int ReadActiveCommands(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
+int ReadActiveCommands(XML_NODE node, void *d1, __attribute__((unused)) void *d2, char **output)
 {
     OSList *l1 = (OSList *) d1;
     int i = 0;
@@ -439,7 +453,7 @@ int ReadActiveCommands(XML_NODE node, void *d1, __attribute__((unused)) void *d2
     return (0);
 }
 
-int Test_ActiveResponse(const char *path, int type) {
+int Test_ActiveResponse(const char *path, int type, char **output) {
     int fail = 0;
     OSList *test_activecmd;
     OSList *test_activeresp;
@@ -448,13 +462,21 @@ int Test_ActiveResponse(const char *path, int type) {
     test_activeresp = OSList_Create();
 
     if (!test_activecmd || !test_activeresp) {
-        merror(LIST_ERROR, "Attempting to check Active-Response");
+        if (output == NULL){
+            merror(LIST_ERROR, "Attempting to check Active-Response");
+        } else {
+            wm_strcat(output, "Active-Response: Unable to create a new list", '\n');
+        }      
         return OS_INVALID;
     }
 
     /* type indicates local or remote config */
-    if (ReadConfig(CAR | type, path, test_activecmd, test_activeresp) < 0) {
-        merror(CONF_READ_ERROR, "Active-Response");
+    if (ReadConfig(CAR | type, path, test_activecmd, test_activeresp, output) < 0) {
+        if (output == NULL){
+            merror(CONF_READ_ERROR, "Active-Response");
+        } else {
+            wm_strcat(output, "Invalid configuration in Active-Response", '\n');
+        }
         fail = 1;
     }
 
@@ -469,7 +491,7 @@ int Test_ActiveResponse(const char *path, int type) {
     return 0;
 }
 
-int Test_Agent_Active_Response(const char *path) {
+int Test_Agent_Active_Response(const char *path, char **output) {
     const char *(xmlf[]) = {"ossec_config", "active-response", "disabled", NULL};
     const char *(castore[]) = {"ossec_config", "active-response", "ca_store", NULL};
     const char *(caverify[]) = {"ossec_config", "active-response", "ca_verification", NULL};
@@ -478,14 +500,22 @@ int Test_Agent_Active_Response(const char *path) {
 
     OS_XML xml;
     if (OS_ReadXML(path, &xml) < 0) {
-        merror(XML_ERROR, path, xml.err, xml.err_line);
+        if (output == NULL){
+            merror(XML_ERROR, path, xml.err, xml.err_line);
+        } else {
+            wm_strcat(output, "ERROR: Invalid configuration in Active-Response", '\n');
+        }
         return OS_INVALID;
     }
 
     char *disable_entry = OS_GetOneContentforElement(&xml, xmlf);
     if (disable_entry) {
         if ( strcmp(disable_entry, "yes") && strcmp(disable_entry, "no") ) {
-            merror(XML_VALUEERR, "disabled", disable_entry);
+            if (output == NULL){
+                merror(XML_VALUEERR, "disabled", disable_entry);
+            } else {
+                wm_strcat(output, "ERROR: Invalid configuration in Active-Response", '\n');
+            }
             os_free(disable_entry);
             OS_ClearXML(&xml);
             return OS_INVALID;
@@ -538,7 +568,11 @@ next:
         char **repeated_a = OS_StrBreak(',', repeated_t, 5);
 
         if (!repeated_a) {
-            merror(XML_VALUEERR, "repeated_offenders", repeated_t);
+            if (output == NULL){
+                merror(XML_VALUEERR, "repeated_offenders", repeated_t);
+            } else {
+                wm_strcat(output, "ERROR: Invalid configuration in Active-Response", '\n');
+            }
             os_free(repeated_t);
             OS_ClearXML(&xml);
             return OS_INVALID;
@@ -554,7 +588,11 @@ next:
             } else if (strcasecmp(ca_verification[i], "no") == 0) {
                 enable_ca_verification = 0;
             } else {
-                mwarn("Invalid content for tag <%s>: '%s'", caverify[2], ca_verification[i]);
+                if (output == NULL){
+                    mwarn("Invalid content for tag <%s>: '%s'", caverify[2], ca_verification[i]);
+                } else {
+                    wm_strcat(output, "WARNING: Invalid content for a tag in Active-response", '\n');
+                }
             }
         }
 
@@ -565,11 +603,19 @@ next:
     {
         char **wcom_ca_store = OS_GetContents(&xml, castore);
         if (!wcom_ca_store) {
-            minfo("No option <ca_store> defined. Wazuh default CA (%s) will be used.", DEF_CA_STORE);
+            if (output == NULL){
+                minfo("No option <ca_store> defined. Wazuh default CA (%s) will be used.", DEF_CA_STORE);
+            } else {
+                wm_strcat(output, "INFO: No option <ca_store> defined. Wazuh default CA (%s) will be used.", '\n');
+            }
         }
     }
     else {
-        minfo("WPK verification with CA is disabled.");
+        if (output == NULL){
+            minfo("WPK verification with CA is disabled.");
+        } else {
+            wm_strcat(output, "WARNING: WPK verification with CA is disabled.", '\n');
+        }
     }
 
     OS_ClearXML(&xml);

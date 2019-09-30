@@ -15,7 +15,7 @@ static const char *XML_NAME = "name";
 
 // Read wodle element
 
-int Read_WModule(const OS_XML *xml, xml_node *node, void *d1, void *d2, int cfg_type)
+int Read_WModule(const OS_XML *xml, xml_node *node, void *d1, void *d2, int cfg_type, char **output)
 {
     wmodule **wmodules = (wmodule**)d1;
     int agent_cfg = d2 ? *(int *)d2 : 0;
@@ -68,7 +68,9 @@ int Read_WModule(const OS_XML *xml, xml_node *node, void *d1, void *d2, int cfg_
     // Get children
 
     if (children = OS_GetElementsbyNode(xml, node), !children) {
-        mdebug1("Empty configuration for module '%s'.", node->values[0]);
+        if (output == NULL){
+            mdebug1("Empty configuration for module '%s'.", node->values[0]);
+        }
     }
 
     // Select module by name
@@ -168,7 +170,7 @@ int Read_WModule(const OS_XML *xml, xml_node *node, void *d1, void *d2, int cfg_
     return 0;
 }
 
-int Read_SCA(const OS_XML *xml, xml_node *node, void *d1)
+int Read_SCA(const OS_XML *xml, xml_node *node, void *d1, char **output)
 {
     wmodule **wmodules = (wmodule**)d1;
     wmodule *cur_wmodule;
@@ -208,7 +210,9 @@ int Read_SCA(const OS_XML *xml, xml_node *node, void *d1)
 
     // Get children
     if (children = OS_GetElementsbyNode(xml, node), !children) {
-        mdebug1("Empty configuration for module '%s'.", node->element);
+        if (output == NULL){
+            mdebug1("Empty configuration for module '%s'.", node->element);
+        }
     }
 
     //Policy Monitoring Module
@@ -224,7 +228,7 @@ int Read_SCA(const OS_XML *xml, xml_node *node, void *d1)
 }
 
 #ifndef WIN32
-int Read_Fluent_Forwarder(const OS_XML *xml, xml_node *node, void *d1)
+int Read_Fluent_Forwarder(const OS_XML *xml, xml_node *node, void *d1, char **output)
 {
     wmodule **wmodules = (wmodule**)d1;
     wmodule *cur_wmodule;
@@ -264,7 +268,9 @@ int Read_Fluent_Forwarder(const OS_XML *xml, xml_node *node, void *d1)
 
     // Get children
     if (children = OS_GetElementsbyNode(xml, node), !children) {
-        mdebug1("Empty configuration for module '%s'.", node->element);
+        if (output == NULL){
+            mdebug1("Empty configuration for module '%s'.", node->element);
+        }
     }
 
     // Fluent Forwarder Module
@@ -280,12 +286,16 @@ int Read_Fluent_Forwarder(const OS_XML *xml, xml_node *node, void *d1)
 }
 #endif
 
-int Test_WModule(const char *path, int type) {
+int Test_WModule(const char *path, int type, char **output) {
     wmodule *test_wmodule;
     os_calloc(1, sizeof(wmodule), test_wmodule);
 
-    if (ReadConfig(CWMODULE | type, path, &test_wmodule, NULL) < 0) {
-        merror(CONF_READ_ERROR, "WModule");
+    if (ReadConfig(CWMODULE | type, path, &test_wmodule, NULL, output) < 0) {
+        if (output == NULL){
+            merror(CONF_READ_ERROR, "WModule");
+        } else {
+            wm_strcat(output, "ERROR: Invalid configuration in WModule", '\n');
+        }
         wm_free(test_wmodule);
         return OS_INVALID;
     }

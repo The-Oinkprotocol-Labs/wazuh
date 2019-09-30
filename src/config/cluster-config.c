@@ -14,7 +14,7 @@
 #include "global-config.h"
 
 
-int Read_Cluster(XML_NODE node, void *d1, __attribute__((unused)) void *d2) {
+int Read_Cluster(XML_NODE node, void *d1, __attribute__((unused)) void *d2, char **output) {
 
     static const char *disabled = "disabled";
     static const char *cluster_name = "name";

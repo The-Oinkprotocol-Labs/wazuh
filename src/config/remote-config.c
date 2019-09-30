@@ -14,7 +14,7 @@
 
 
 /* Reads remote config */
-int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
+int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2, char **output)
 {
     int i = 0;
     int secure_count = 0;
@@ -245,7 +245,7 @@ int Read_Remote(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     return (0);
 }
 
-int Test_Remoted(const char *path) {
+int Test_Remoted(const char *path, char **output) {
     remoted *test_remoted;
     os_calloc(1, sizeof(remoted), test_remoted);
 
@@ -256,18 +256,30 @@ int Test_Remoted(const char *path) {
     test_remoted->nocmerged = 0;
     test_remoted->queue_size = 131072;
 
-    if (ReadConfig(CREMOTE, path, test_remoted, NULL) < 0) {
-		merror(CONF_READ_ERROR, "Remoted");
+    if (ReadConfig(CREMOTE, path, test_remoted, NULL, output) < 0) {
+        if (output == NULL){
+            merror(CONF_READ_ERROR, "Remoted");
+        } else {
+            wm_strcat(output, "ERROR: Invalid configuration in Remoted", '\n');
+        }
         free_remoted(test_remoted);
         return OS_INVALID;
 	}
 
     if(test_remoted->queue_size < 1) {
-        merror("Remoted Config: Queue size is invalid. Review configuration.");
+        if (output == NULL){
+            merror("Remoted Config: Queue size is invalid. Review configuration.");
+        } else {
+            wm_strcat(output, "Remoted Config: Queue size is invalid. Review configuration.", '\n');
+        }
         free_remoted(test_remoted);
         return OS_INVALID;
     } else if(test_remoted->queue_size > 262144) {
-        mwarn("Remoted Config: Queue size is very high. The application may run out of memory.");
+        if (output == NULL){
+            mwarn("Remoted Config: Queue size is very high. The application may run out of memory.");
+        } else {
+            wm_strcat(output, "Remoted Config: Queue size is very high. The application may run out of memory.", '\n');
+        }
     }
 
     /* Frees the LogReader config struct */

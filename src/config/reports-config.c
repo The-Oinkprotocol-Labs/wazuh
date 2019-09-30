@@ -35,7 +35,7 @@ static int _filter_arg(char *mystr)
     return (1);
 }
 
-int Read_CReports(XML_NODE node, void *config, __attribute__((unused)) void *config2)
+int Read_CReports(XML_NODE node, void *config, __attribute__((unused)) void *config2, char **output)
 {
     unsigned int i = 0, s = 0;
 

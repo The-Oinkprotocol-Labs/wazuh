@@ -16,7 +16,7 @@
 
 int Read_Client_Server(XML_NODE node, agent *logr);
 
-int Read_Client(const OS_XML *xml, XML_NODE node, void *d1, __attribute__((unused)) void *d2)
+int Read_Client(const OS_XML *xml, XML_NODE node, void *d1, __attribute__((unused)) void *d2, char **output)
 {
     int i = 0;
     char f_ip[128] = {'\0'};
@@ -276,11 +276,15 @@ int Read_Client_Server(XML_NODE node, agent * logr)
     return (0);
 }
 
-int Test_Client(const char *path, int type){
+int Test_Client(const char *path, int type, char **output){
     agent test_client = { .server = NULL };
 
-    if (ReadConfig(CCLIENT | type, path, &test_client, NULL) < 0) {
-		merror(CONF_READ_ERROR, "Client");
+    if (ReadConfig(CCLIENT | type, path, &test_client, NULL, output) < 0) {
+        if (output == NULL){
+            merror(CONF_READ_ERROR, "Client");
+        } else {
+            wm_strcat(output, "ERROR: Invalid configuration in Client", '\n');
+        }
         Free_Client(&test_client);
         return OS_INVALID;
 	}

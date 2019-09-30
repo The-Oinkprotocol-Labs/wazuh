@@ -16,7 +16,7 @@ int maximum_files;
 int current_files;
 int total_files;
 
-int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
+int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2, char **output)
 {
     unsigned int pl = 0;
     unsigned int gl = 0;
@@ -499,18 +499,26 @@ int Read_Localfile(XML_NODE node, void *d1, __attribute__((unused)) void *d2)
     return (0);
 }
 
-int Test_Localfile(const char *path, int type){
+int Test_Localfile(const char *path, int type, char **output){
     int maximum_lines = getDefine_Int("logcollector", "max_lines", 0, 1000000);
 
     if (maximum_lines > 0 && maximum_lines < 100) {
-        merror("Definition 'logcollector.max_lines' must be 0 or 100..1000000.");
+        if (output == NULL) {
+            merror("Definition 'logcollector.max_lines' must be 0 or 100..1000000.");
+        } else {
+            wm_strcat(output, "Definition 'logcollector.max_lines' must be 0 or 100..1000000.", '\n');
+        }
         return OS_INVALID;
     }
 
 #ifndef WIN32
     rlim_t nofile = getDefine_Int("logcollector", "rlimit_nofile", 1024, 1048576);
     if (maximum_files > (int)nofile - 100) {
-        merror("Definition 'logcollector.max_files' must be lower than ('logcollector.rlimit_nofile' - 100).");
+        if (output == NULL){
+            merror("Definition 'logcollector.max_files' must be lower than ('logcollector.rlimit_nofile' - 100).");
+        } else {
+            wm_strcat(output, "Definition 'logcollector.max_files' must be lower than ('logcollector.rlimit_nofile' - 100).", '\n');
+        }
         return OS_SIZELIM;
     }
 #endif
@@ -520,11 +528,19 @@ int Test_Localfile(const char *path, int type){
     if(type & CRMOTE_CONFIG) {
         test_localfile.agent_cfg = 1;
         test_localfile.accept_remote = 1;
-        mwarn("Remote commands must be accept from the manager. Accepted for testing");
+        if (output == NULL){
+            mwarn("Remote commands must be accept from the manager. Accepted for testing");
+        } else {
+            wm_strcat(output, "WARNING: Remote commands must be accept from the manager. Accepted for testing", '\n');
+        }
     }
 
-    if (ReadConfig(CLOCALFILE | CSOCKET | type, path, &test_localfile, NULL) < 0) {
-        merror(CONF_READ_ERROR, "Localfile");
+    if (ReadConfig(CLOCALFILE | CSOCKET | type, path, &test_localfile, NULL, output) < 0) {
+        if (output == NULL){
+            merror(CONF_READ_ERROR, "Localfile");
+        } else {
+            wm_strcat(output, "ERROR: Invalid configuration in Localfile", '\n');
+        }
         Free_Localfile(&test_localfile);
         return OS_INVALID;
     }

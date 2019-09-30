@@ -14,7 +14,7 @@
 #include "config.h"
 
 
-int Read_ClientBuffer(XML_NODE node, __attribute__((unused)) void *d1, void *d2)
+int Read_ClientBuffer(XML_NODE node, __attribute__((unused)) void *d1, void *d2, char **output)
 {
     int i = 0;
 
@@ -94,11 +94,15 @@ int Read_ClientBuffer(XML_NODE node, __attribute__((unused)) void *d1, void *d2)
     return (0);
 }
 
-int Test_ClientBuffer(const char *path, int type){
+int Test_ClientBuffer(const char *path, int type, char **output){
     agent test_clientBuffer = { .server = 0 };
 
-    if (ReadConfig(CBUFFER | type, path, NULL, &test_clientBuffer) < 0) {
-		merror(CONF_READ_ERROR, "ClientBuffer");
+    if (ReadConfig(CBUFFER | type, path, NULL, &test_clientBuffer, output) < 0) {
+        if (output == NULL){
+            merror(CONF_READ_ERROR, "ClientBuffer");
+        } else{
+            wm_strcat(output, "ERROR: Invalid configuration in ClientBuffer", '\n');
+        }
         Free_Client(&test_clientBuffer);
         return OS_INVALID;
 	}

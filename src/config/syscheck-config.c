@@ -793,11 +793,12 @@ out_free:
     return ret;
 }
 
-int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__((unused)) void *mailp)
+int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__((unused)) void *mailp, char **output)
 {
     int i = 0;
     int j = 0;
     xml_node **children = NULL;
+    char message[OS_FLSIZE];
 
     /* XML Definitions */
     const char *xml_directories = "directories";
@@ -847,10 +848,21 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
     }
     while (node && node[i]) {
         if (!node[i]->element) {
-            merror(XML_ELEMNULL);
+            if (output == NULL){
+                merror(XML_ELEMNULL);
+            } else {
+                wm_strcat(output, "Invalid NULL element in the configuration.", '\n');
+            }
             return (OS_INVALID);
         } else if (!node[i]->content) {
-            merror(XML_VALUENULL, node[i]->element);
+            if (output == NULL) {
+                merror(XML_VALUENULL, node[i]->element);
+            } else {
+                snprintf(message, OS_FLSIZE + 1,
+                    "Invalid NULL content for element: %s.",
+                    node[i]->element);
+                wm_strcat(output, message, '\n');
+            }
             return (OS_INVALID);
         }
 
@@ -878,7 +890,15 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
 
 #ifdef WIN32
             if(!ExpandEnvironmentStrings(node[i]->content, dirs, sizeof(dirs) - 1)){
-                merror("Could not expand the environment variable %s (%ld)", node[i]->content, GetLastError());
+                if (output == NULL){
+                    merror("Could not expand the environment variable %s (%ld)",
+                        node[i]->content, GetLastError());
+                } else {
+                    snprintf(message, OS_FLSIZE + 1,
+                        "Could not expand the environment variable %s (%ld)",
+                        node[i]->content, GetLastError());
+                    wm_strcat(output, message, '\n');
+                }
                 continue;
             }
             str_lowercase(dirs);
@@ -911,13 +931,25 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                             snprintf(arch, 6, "%s", "64bit");
                         } else if (strcmp(node[i]->values[j], xml_both) == 0) {
                             snprintf(arch, 6, "%s", "both");
-                        } else {
+                        } else if (output == NULL){
                             merror(XML_INVATTR, node[i]->attributes[j], node[i]->content);
                             free(tag);
                             return OS_INVALID;
+                        } else {
+                            snprintf(message, OS_FLSIZE + 1, "Invalid attribute '%s' in the configuration: '%s'.",
+                                node[i]->attributes[j], node[i]->content);
+                            wm_strcat(output, message, '\n');
+                            free(tag);
+                            return OS_INVALID;
                         }
-                    } else {
+                    } else if (output == NULL){
                         merror(XML_INVATTR, node[i]->attributes[j], node[i]->content);
+                        free(tag);
+                        return OS_INVALID;
+                    } else {
+                        snprintf(message, OS_FLSIZE + 1, "Invalid attribute '%s' in the configuration: '%s'.",
+                            node[i]->attributes[j], node[i]->content);
+                        wm_strcat(output, message, '\n');
                         free(tag);
                         return OS_INVALID;
                     }
@@ -954,7 +986,13 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
         else if (strcmp(node[i]->element, xml_windows_audit_interval) == 0) {
 #ifdef WIN32
             if (!OS_StrIsNum(node[i]->content)) {
-                merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                if (output == NULL) {
+                    merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                } else {
+                    snprintf(message, OS_FLSIZE + 1, "Invalid value for element '%s': '%s'.",
+                        node[i]->element, node[i]->content);
+                    wm_strcat(output, message, '\n');
+                }
                 return (OS_INVALID);
             }
 
@@ -964,7 +1002,13 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
         /* Get frequency */
         else if (strcmp(node[i]->element, xml_time) == 0) {
             if (!OS_StrIsNum(node[i]->content)) {
-                merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                if (output == NULL) {
+                    merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                } else {
+                    snprintf(message, OS_FLSIZE + 1, "Invalid value for element '%s': '%s'.",
+                        node[i]->element, node[i]->content);
+                    wm_strcat(output, message, '\n');
+                }
                 return (OS_INVALID);
             }
 
@@ -974,7 +1018,13 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
         else if (strcmp(node[i]->element, xml_scantime) == 0) {
             syscheck->scan_time = OS_IsValidUniqueTime(node[i]->content);
             if (!syscheck->scan_time) {
-                merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                if (output == NULL) {
+                    merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                } else {
+                    snprintf(message, OS_FLSIZE + 1, "Invalid value for element '%s': '%s'.",
+                        node[i]->element, node[i]->content);
+                    wm_strcat(output, message, '\n');
+                }
                 return (OS_INVALID);
             }
         }
@@ -983,7 +1033,13 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
         else if (strcmp(node[i]->element, xml_scanday) == 0) {
             syscheck->scan_day = OS_IsValidDay(node[i]->content);
             if (!syscheck->scan_day) {
-                merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                if (output == NULL) {
+                    merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                } else {
+                    snprintf(message, OS_FLSIZE + 1, "Invalid value for element '%s': '%s'.",
+                        node[i]->element, node[i]->content);
+                    wm_strcat(output, message, '\n');
+                }
                 return (OS_INVALID);
             }
         }
@@ -994,8 +1050,13 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                 syscheck->scan_on_start = 1;
             } else if (strcmp(node[i]->content, "no") == 0) {
                 syscheck->scan_on_start = 0;
-            } else {
+            } else if (output == NULL) {
                 merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                return (OS_INVALID);
+            } else {
+                snprintf(message, OS_FLSIZE + 1, "Invalid value for element '%s': '%s'.",
+                    node[i]->element, node[i]->content);
+                wm_strcat(output, message, '\n');
                 return (OS_INVALID);
             }
         }
@@ -1006,8 +1067,13 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                 syscheck->disabled = 1;
             } else if (strcmp(node[i]->content, "no") == 0) {
                 syscheck->disabled = 0;
-            } else {
+            } else if (output == NULL) {
                 merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                return (OS_INVALID);
+            } else {
+                snprintf(message, OS_FLSIZE + 1, "Invalid value for element '%s': '%s'.",
+                    node[i]->element, node[i]->content);
+                wm_strcat(output, message, '\n');
                 return (OS_INVALID);
             }
         }
@@ -1021,8 +1087,15 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                 syscheck->skip_nfs = 0;
             else
             {
-                merror(XML_VALUEERR,node[i]->element,node[i]->content);
-                return(OS_INVALID);
+                if (output == NULL) {
+                    merror(XML_VALUEERR, node[i]->element, node[i]->content);
+                    return (OS_INVALID);
+                } else {
+                    snprintf(message, OS_FLSIZE + 1, "Invalid value for element '%s': '%s'.",
+                        node[i]->element, node[i]->content);
+                    wm_strcat(output, message, '\n');
+                    return (OS_INVALID);
+                }
             }
         }
 
@@ -1037,7 +1110,14 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
             os_calloc(2048, sizeof(char), new_ig);
 
             if(!ExpandEnvironmentStrings(node[i]->content, new_ig, 2047)){
-                merror("Could not expand the environment variable %s (%ld)", node[i]->content, GetLastError());
+                if (output == NULL){
+                    merror("Could not expand the environment variable %s (%ld)", node[i]->content, GetLastError());
+                } else {
+                    snprintf(message, OS_FLSIZE + 1,
+                        "Could not expand the environment variable %s (%ld)",
+                        node[i]->content, GetLastError());
+                    wm_strcat(output, message, '\n');
+                }
                 free(new_ig);
                 continue;
             }
@@ -1072,13 +1152,26 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                     if (!OSMatch_Compile(node[i]->content,
                                          syscheck->ignore_regex[ign_size], 0)) {
                         mt_pt = (OSMatch *)syscheck->ignore_regex[ign_size];
-                        merror(REGEX_COMPILE, node[i]->content,
+                        if (output) {
+                            merror(REGEX_COMPILE, node[i]->content,
                                mt_pt->error);
+                        } else {
+                            snprintf(message, OS_FLSIZE + 1,
+                                "Syntax error on regex: '%s': %d.",
+                                node[i]->content, mt_pt->error);
+                            wm_strcat(output, message, '\n');
+                        }
                         return (0);
                     }
-                } else {
+                } else if (output == NULL) {
                     merror(FIM_INVALID_ATTRIBUTE, node[i]->attributes[0]);
                     return (OS_INVALID);
+                } else {
+                    snprintf(message, OS_FLSIZE + 1,
+                        "Invalid attribute '%s' for directory option.",
+                        node[i]->attributes[0]);
+                    wm_strcat(output, message, '\n');
+                    return OS_INVALID;
                 }
             }
 
@@ -1123,12 +1216,24 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                             arch = ARCH_64BIT;
                         else if (strcmp(node[i]->values[j], xml_both) == 0)
                             arch = ARCH_BOTH;
-                        else {
+                        else if (output = NULL) {
                             merror(XML_INVATTR, node[i]->attributes[j], node[i]->content);
                             return OS_INVALID;
+                        } else {
+                            snprintf(message, OS_FLSIZE + 1,
+                                "Invalid attribute '%s' in the configuration: '%s'.",
+                                node[i]->attributes[j], node[i]->content);
+                            wm_strcat(output, message, '\n');
+                            return OS_INVALID;
                         }
-                    } else {
+                    } else if (output = NULL){
                         merror(XML_INVATTR, node[i]->attributes[j], node[i]->content);
+                        return OS_INVALID;
+                    } else {
+                        snprintf(message, OS_FLSIZE + 1,
+                            "Invalid attribute '%s' in the configuration: '%s'.",
+                            node[i]->attributes[j], node[i]->content);
+                        wm_strcat(output, message, '\n');
                         return OS_INVALID;
                     }
                 }
@@ -1160,7 +1265,14 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
             os_calloc(2048, sizeof(char), new_nodiff);
 
             if(!ExpandEnvironmentStrings(node[i]->content, new_nodiff, 2047)){
-                merror("Could not expand the environment variable %s (%ld)", node[i]->content, GetLastError());
+                if (output == NULL){
+                    merror("Could not expand the environment variable %s (%ld)", node[i]->content, GetLastError());
+                } else {
+                    snprintf(message, OS_FLSIZE + 1,
+                        "Could not expand the environment variable %s (%ld)",
+                        node[i]->content, GetLastError());
+                    wm_strcat(output, message, '\n');
+                }
                 free(new_nodiff);
                 continue;
             }
@@ -1190,18 +1302,35 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                     }
                     os_calloc(1, sizeof(OSMatch),
                               syscheck->nodiff_regex[nodiff_size]);
-                    mdebug1("Found nodiff regex node %s", node[i]->content);
+                    if (output == NULL){
+                        mdebug1("Found nodiff regex node %s", node[i]->content);
+                    }
                     if (!OSMatch_Compile(node[i]->content,
                                          syscheck->nodiff_regex[nodiff_size], 0)) {
                         mt_pt = (OSMatch *)syscheck->nodiff_regex[nodiff_size];
-                        merror(REGEX_COMPILE, node[i]->content,
+                        if (output == NULL) {
+                            merror(REGEX_COMPILE, node[i]->content,
                                mt_pt->error);
+                        } else {
+                            snprintf(message, OS_FLSIZE + 1,
+                                "Syntax error on regex: '%s': %d.",
+                                node[i]->content, mt_pt->error);
+                            wm_strcat(output, message, '\n');
+                        }
                         return (0);
                     }
-                    mdebug1("Found nodiff regex node %s OK?", node[i]->content);
-                    mdebug1("Found nodiff regex size %d", nodiff_size);
-                } else {
+                    if (output == NULL){
+                        mdebug1("Found nodiff regex node %s OK?", node[i]->content);
+                        mdebug1("Found nodiff regex size %d", nodiff_size);
+                    }
+                } else if (output == NULL) {
                     merror(FIM_INVALID_ATTRIBUTE, node[i]->attributes[0]);
+                    return (OS_INVALID);
+                } else {
+                    snprintf(message, OS_FLSIZE + 1,
+                        "Invalid attribute '%s' for directory option.",
+                        node[i]->attributes[0]);
+                    wm_strcat(output, message, '\n');
                     return (OS_INVALID);
                 }
             }
@@ -1234,7 +1363,14 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
 
 #ifdef WIN32
             if(!ExpandEnvironmentStrings(node[i]->content, cmd, sizeof(cmd) - 1)){
-                merror("Could not expand the environment variable %s (%ld)", node[i]->content, GetLastError());
+                if (output == NULL){
+                    merror("Could not expand the environment variable %s (%ld)", node[i]->content, GetLastError());
+                } else {
+                    snprintf(message, OS_FLSIZE + 1,
+                        "Could not expand the environment variable %s (%ld)",
+                        node[i]->content, GetLastError());
+                    wm_strcat(output, message, '\n');
+                }
                 continue;
             }
             str_lowercase(cmd);
@@ -1253,9 +1389,15 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                     /* More checks needed (perms, owner, etc.) */
                     os_calloc(1, strlen(cmd) + 1, syscheck->prefilter_cmd);
                     strncpy(syscheck->prefilter_cmd, cmd, strlen(cmd));
-                } else {
+                } else if (output == NULL){
                     merror(XML_VALUEERR, node[i]->element, node[i]->content);
                     return (OS_INVALID);
+                } else {
+                    snprintf(message, OS_FLSIZE + 1,
+                        "Invalid value for element '%s': %s.",
+                        node[i]->element, node[i]->content);
+                    wm_strcat(output, message, '\n');
+                    return(OS_INVALID);
                 }
             }
         } else if (strcmp(node[i]->element, xml_remove_old_diff) == 0) {
@@ -1266,9 +1408,15 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                 syscheck->restart_audit = 1;
             else if(strcmp(node[i]->content, "no") == 0)
                 syscheck->restart_audit = 0;
-            else
+            else if (output == NULL)
             {
                 merror(XML_VALUEERR,node[i]->element,node[i]->content);
+                return(OS_INVALID);
+            } else {
+                snprintf(message, OS_FLSIZE + 1,
+                    "Invalid value for element '%s': %s.",
+                    node[i]->element, node[i]->content);
+                wm_strcat(output, message, '\n');
                 return(OS_INVALID);
             }
         }
@@ -1302,9 +1450,17 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                         syscheck->audit_healthcheck = 1;
                     else if(strcmp(children[j]->content, "no") == 0)
                         syscheck->audit_healthcheck = 0;
-                    else
+                    else if (output == NULL)
                     {
                         merror(XML_VALUEERR,children[j]->element,children[j]->content);
+                        OS_ClearNode(children);
+                        return(OS_INVALID);
+                    }
+                    else {
+                        snprintf(message, OS_FLSIZE + 1,
+                            "Invalid value for element '%s': %s.",
+                            children[j]->element,children[j]->content);
+                        wm_strcat(output, message, '\n');
                         OS_ClearNode(children);
                         return(OS_INVALID);
                     }
@@ -1313,22 +1469,40 @@ int Read_Syscheck(const OS_XML *xml, XML_NODE node, void *configp, __attribute__
                         syscheck->restart_audit = 1;
                     else if(strcmp(children[j]->content, "no") == 0)
                         syscheck->restart_audit = 0;
-                    else
+                    else if (output == NULL)
                     {
                         merror(XML_VALUEERR,children[j]->element,children[j]->content);
                         OS_ClearNode(children);
                         return(OS_INVALID);
                     }
-                } else {
+                    else {
+                        snprintf(message, OS_FLSIZE + 1,
+                            "Invalid value for element '%s': %s.",
+                            children[j]->element,children[j]->content);
+                        wm_strcat(output, message, '\n');
+                        OS_ClearNode(children);
+                        return(OS_INVALID);
+                    }
+                } else if (output == NULL){                    
                     merror(XML_ELEMNULL);
+                    OS_ClearNode(children);
+                    return OS_INVALID;
+                } else {
+                    wm_strcat(output, "Invalid NULL element in the configuration.", '\n');
                     OS_ClearNode(children);
                     return OS_INVALID;
                 }
             }
             OS_ClearNode(children);
-        } else {
+        } else if (output == NULL){
             merror(XML_INVELEM, node[i]->element);
             return (OS_INVALID);
+        } else {
+            snprintf(message, OS_FLSIZE + 1,
+                "Invalid element in the configuration: '%s'.",
+                node[i]->element);
+            wm_strcat(output, message, '\n');
+            return(OS_INVALID
         }
         i++;
     }
@@ -1393,11 +1567,15 @@ char *syscheck_opts2str(char *buf, int buflen, int opts) {
     return buf;
 }
 
-int Test_Syscheck(const char *path, int type){
+int Test_Syscheck(const char *path, int type, char **output){
     syscheck_config test_syscheck = { .tsleep = 0 };
 
-    if (ReadConfig(CSYSCHECK | type, path, &test_syscheck, NULL) < 0) {
-		merror(CONF_READ_ERROR, "Syscheck");
+    if (ReadConfig(CSYSCHECK | type, path, &test_syscheck, NULL, output) < 0) {
+        if (output == NULL){
+            merror(CONF_READ_ERROR, "Syscheck");
+        } else {
+            wm_strcat(output, "ERROR: Invalid configuration in Syscheck", '\n');
+        }
         Free_Syscheck(&test_syscheck);
         return OS_INVALID;
 	}

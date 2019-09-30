@@ -16,7 +16,7 @@ const char *xml_label = "label";
 const char *xml_key = "key";
 const char *xml_hidden = "hidden";
 
-int Read_Labels(XML_NODE node, void *d1, __attribute__((unused)) void *d2) {
+int Read_Labels(XML_NODE node, void *d1, __attribute__((unused)) void *d2, char **output) {
     int i;
     int j;
     const char *key;
@@ -96,11 +96,15 @@ error:
     return OS_INVALID;
 }
 
-int Test_Labels(const char *path, int type) {
+int Test_Labels(const char *path, int type, char **output) {
     wlabel_t *test_labels = NULL;
 
-    if (ReadConfig(CLABELS | type, path, &test_labels, NULL) < 0) {
-        merror(CONF_READ_ERROR, "Labels");
+    if (ReadConfig(CLABELS | type, path, &test_labels, NULL, output) < 0) {
+        if (output == NULL){
+            merror(CONF_READ_ERROR, "Labels");
+        } else {
+            wm_strcat(output, "ERROR: Invalid configuration in Labels", '\n');
+        }
         labels_free(test_labels);
         return OS_INVALID;
     }

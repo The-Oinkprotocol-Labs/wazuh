@@ -14,7 +14,7 @@
 #include "localfile-config.h"
 
 
-int Read_Socket(XML_NODE node, void *d1, __attribute__((unused)) void *d2) {
+int Read_Socket(XML_NODE node, void *d1, __attribute__((unused)) void *d2, char **output) {
 
     static const char *socket_name = "name";
     static const char *socket_location = "location";

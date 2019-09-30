@@ -15,7 +15,7 @@
 
 static short eval_bool(const char *str);
 
-int Read_Authd(XML_NODE node, void *d1, __attribute__((unused)) void *d2) {
+int Read_Authd(XML_NODE node, void *d1, __attribute__((unused)) void *d2, char **output) {
     /* XML Definitions */
     static const char *xml_disabled = "disabled";
     static const char *xml_port = "port";
@@ -188,12 +188,16 @@ short eval_bool(const char *str) {
     }
 }
 
-int Test_Authd(const char *path) {
+int Test_Authd(const char *path, char **output) {
     authd_config_t *test_authd;
     os_calloc(1, sizeof(authd_config_t), test_authd);
 
-    if (ReadConfig(CAUTHD, path, test_authd, NULL) < 0) {
-		merror(CONF_READ_ERROR, "Authd");
+    if (ReadConfig(CAUTHD, path, test_authd, NULL, output) < 0) {
+        if (output == NULL){
+            merror(CONF_READ_ERROR, "Authd");
+        } else {
+            wm_strcat(output, "ERROR: Invalid configuration in Authd", '\n');
+        }
         free_authd_config(test_authd);
         return OS_INVALID;
 	}
